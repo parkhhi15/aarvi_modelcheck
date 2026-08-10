@@ -1,0 +1,277 @@
+'use client';
+
+import React from 'react';
+import { Doctor, PatientMemory, Appointment, Language } from '@/lib/types';
+import { DEMO_DOCTORS, INITIAL_MEDICAL_RECORDS, DEMO_HOSPITAL_NAME } from '@/lib/mockData';
+import {
+  X,
+  Calendar,
+  Clock,
+  FileText,
+  Pill,
+  Search,
+  Bone,
+} from 'lucide-react';
+
+/* 1. BOOKING CONFIRMATION MODAL */
+export const BookingModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  doctor: Doctor;
+  slot: string;
+  day: string;
+  onConfirm: () => void;
+  language: Language;
+}> = ({ isOpen, onClose, doctor, slot, day, onConfirm, language }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-[#E4F1EE] shadow-2xl space-y-4 font-sans">
+        <div className="flex items-center justify-between border-b border-[#E4F1EE] pb-3">
+          <h3 className="font-extrabold text-[#163A39] text-base flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-[#0D7C7B]" />
+            <span>{language === 'hi' ? 'अपॉइंटमेंट पुष्टि' : 'Confirm Appointment'}</span>
+          </h3>
+          <button onClick={onClose} className="text-[#527977] hover:text-[#163A39] p-1">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Text-Based Doctor Card (NO Photo) */}
+        <div className="bg-[#F7FBFA] p-4 rounded-2xl border border-[#E4F1EE] space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#F0F9F8] text-[#0D7C7B] flex items-center justify-center border border-[#CBE5E1] shrink-0">
+              <Bone className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-extrabold text-[#163A39] text-sm">{doctor.name}</h4>
+              <p className="text-xs font-bold text-[#0D7C7B]">{doctor.specialty} Specialist</p>
+              <p className="text-[11px] text-[#527977] font-medium">{doctor.hospital || DEMO_HOSPITAL_NAME}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E4F1EE] text-xs">
+            <div>
+              <span className="text-[10px] text-[#527977] uppercase font-bold block">Patient:</span>
+              <span className="font-bold text-[#163A39]">Riya</span>
+            </div>
+            <div>
+              <span className="text-[10px] text-[#527977] uppercase font-bold block">Time Slot:</span>
+              <span className="font-bold text-[#0D7C7B]">{day} • {slot}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl border border-[#CBE5E1] text-[#527977] text-xs font-bold hover:bg-[#F0F9F8]"
+          >
+            {language === 'hi' ? 'रद्द करें' : 'Cancel'}
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 py-2.5 rounded-xl bg-[#0D7C7B] text-white text-xs font-bold hover:bg-[#095A59] shadow-xs"
+          >
+            {language === 'hi' ? 'बुक करें' : 'Confirm Booking'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* 2. RESCHEDULE MODAL */
+export const RescheduleModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  activeAppointment?: Appointment;
+  onSelectSlot: (slot: string) => void;
+  language: Language;
+}> = ({ isOpen, onClose, activeAppointment, onSelectSlot, language }) => {
+  if (!isOpen) return null;
+
+  const slots = ['5:00 PM', '6:30 PM'];
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-[#E4F1EE] shadow-2xl space-y-4 font-sans">
+        <div className="flex items-center justify-between border-b border-[#E4F1EE] pb-3">
+          <h3 className="font-extrabold text-[#163A39] text-base flex items-center gap-2">
+            <Clock className="w-5 h-5 text-[#0D7C7B]" />
+            <span>{language === 'hi' ? 'समय बदलें' : 'Reschedule Appointment'}</span>
+          </h3>
+          <button onClick={onClose} className="text-[#527977] hover:text-[#163A39] p-1">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="bg-[#F7FBFA] p-3 rounded-xl border border-[#E4F1EE]">
+          <p className="text-xs text-[#527977]">
+            Active Doctor: <strong className="text-[#163A39]">{activeAppointment?.doctor_name || 'Dr. Amit Sharma'}</strong>
+          </p>
+          <p className="text-xs font-bold text-[#0D7C7B] mt-0.5">
+            Current: {activeAppointment?.date_text || 'Today'} • {activeAppointment?.time_slot || '3:30 PM'}
+          </p>
+        </div>
+
+        <div>
+          <span className="text-xs font-bold text-[#527977] block mb-2">Available Evening Slots:</span>
+          <div className="grid grid-cols-2 gap-2">
+            {slots.map((slot) => (
+              <button
+                key={slot}
+                onClick={() => onSelectSlot(slot)}
+                className="p-3 bg-[#F0F9F8] hover:bg-[#0D7C7B] hover:text-white border border-[#CBE5E1] text-[#0D7C7B] font-bold text-xs rounded-xl transition-all text-center"
+              >
+                {slot}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* 3. MEDICAL RECORDS MODAL */
+export const MedicalRecordsModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  language: Language;
+}> = ({ isOpen, onClose, language }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white rounded-3xl p-6 max-w-lg w-full border border-[#E4F1EE] shadow-2xl space-y-4 font-sans max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-[#E4F1EE] pb-3">
+          <h3 className="font-extrabold text-[#163A39] text-base flex items-center gap-2">
+            <FileText className="w-5 h-5 text-[#0D7C7B]" />
+            <span>{language === 'hi' ? 'चिकित्सा रिकॉर्ड - रिया' : 'Medical Records — Riya'}</span>
+          </h3>
+          <button onClick={onClose} className="text-[#527977] hover:text-[#163A39] p-1">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          {INITIAL_MEDICAL_RECORDS.map((rec) => (
+            <div key={rec.id} className="bg-[#F7FBFA] p-4 rounded-2xl border border-[#E4F1EE] space-y-2">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h4 className="font-bold text-[#163A39] text-xs">
+                    {language === 'hi' ? rec.title_hi : rec.title}
+                  </h4>
+                  <p className="text-[11px] font-semibold text-[#0D7C7B] mt-0.5">
+                    {rec.doctor} • {rec.date}
+                  </p>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-[#527977] border border-[#E4F1EE]">
+                  {rec.type}
+                </span>
+              </div>
+              <p className="text-xs text-[#527977]">
+                {language === 'hi' ? rec.summary_hi : rec.summary}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* 4. MEDICINE MODAL */
+export const MedicineModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  patientMemory: PatientMemory;
+  language: Language;
+}> = ({ isOpen, onClose, patientMemory, language }) => {
+  if (!isOpen) return null;
+
+  const rx = patientMemory.recent_prescription;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-[#E4F1EE] shadow-2xl space-y-4 font-sans">
+        <div className="flex items-center justify-between border-b border-[#E4F1EE] pb-3">
+          <h3 className="font-extrabold text-[#163A39] text-base flex items-center gap-2">
+            <Pill className="w-5 h-5 text-[#0D7C7B]" />
+            <span>{language === 'hi' ? 'दवाई निर्देश' : 'Prescription Details'}</span>
+          </h3>
+          <button onClick={onClose} className="text-[#527977] hover:text-[#163A39] p-1">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {rx ? (
+          <div className="bg-[#F7FBFA] p-4 rounded-2xl border border-[#E4F1EE] space-y-2">
+            <h4 className="font-extrabold text-[#163A39] text-sm">{rx.medicine}</h4>
+            <p className="text-xs font-bold text-[#0D7C7B]">Dosage: {rx.dosage}</p>
+            <p className="text-xs text-[#527977]">
+              {language === 'hi' ? rx.instructions_hi : rx.instructions}
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-[#527977]">No active prescriptions found.</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* 5. DOCTOR BROWSE MODAL */
+export const DoctorBrowseModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectDoctor: (doc: Doctor) => void;
+  language: Language;
+}> = ({ isOpen, onClose, onSelectDoctor, language }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white rounded-3xl p-6 max-w-lg w-full border border-[#E4F1EE] shadow-2xl space-y-4 font-sans max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-[#E4F1EE] pb-3">
+          <h3 className="font-extrabold text-[#163A39] text-base flex items-center gap-2">
+            <Search className="w-5 h-5 text-[#0D7C7B]" />
+            <span>{language === 'hi' ? 'ऑर्थोपेडिक डॉक्टर' : 'Orthopedic Specialist'}</span>
+          </h3>
+          <button onClick={onClose} className="text-[#527977] hover:text-[#163A39] p-1">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          {DEMO_DOCTORS.map((doc) => (
+            <div key={doc.id} className="bg-[#F7FBFA] p-4 rounded-2xl border border-[#E4F1EE] flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#F0F9F8] text-[#0D7C7B] flex items-center justify-center border border-[#CBE5E1] shrink-0">
+                  <Bone className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-[#163A39] text-sm">{doc.name}</h4>
+                  <p className="text-xs font-bold text-[#0D7C7B]">{doc.specialty} Specialist</p>
+                  <p className="text-[11px] text-[#527977] font-medium">{doc.experience} experience • Hindi • English</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  onSelectDoctor(doc);
+                  onClose();
+                }}
+                className="px-4 py-2 bg-[#0D7C7B] hover:bg-[#095A59] text-white text-xs font-bold rounded-xl shadow-2xs shrink-0"
+              >
+                {language === 'hi' ? 'बुक करें' : 'Book'}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
