@@ -28,7 +28,8 @@ export default function Home() {
   const [debugState, setDebugState] = useState<SystemDebugState>({
     lastQuery: "I've had knee pain for three days.",
     intent: 'FIND_SPECIALIST',
-    intentEngine: 'Local fallback (Gemini Key Invalid/Unavailable)',
+    intentEngine: 'Groq API (llama-3.1-8b-instant) ✓',
+    intentSource: 'Groq',
     urgency: 'ROUTINE',
     qdrantHits: [
       {
@@ -37,11 +38,13 @@ export default function Home() {
         score: 0.98,
       },
     ],
-    geminiStatus: 'fallback',
+    groqStatus: 'success',
+
     rimeStatus: 'success',
     rimeAudioBytes: 208000,
     language: 'en',
     retrievalFallbackActive: false,
+
     hospitalId: DEMO_HOSPITAL_ID,
   });
 

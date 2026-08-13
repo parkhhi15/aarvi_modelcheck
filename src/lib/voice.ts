@@ -146,7 +146,12 @@ export async function speakWithAarvi(
         if (onEnd) onEnd();
       };
 
-      await audio.play();
+      try {
+        await audio.play();
+      } catch (playErr) {
+        console.warn('[RIME SYNTHESIS] Audio playback prevented (e.g. browser autoplay policy):', playErr);
+        if (onEnd) onEnd();
+      }
       return { success: true, audioUrl: url, fallback: false };
     }
 

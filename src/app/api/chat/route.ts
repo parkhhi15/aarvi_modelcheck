@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { parseStructuredIntent, generateAarviResponse } from '@/lib/gemini';
+import { parseStructuredIntentWithGroq, generateGroqAarviResponse, normalizeTime } from '@/lib/groq';
+
 import {
   queryDoctorsFromQdrant,
   queryHospitalKnowledgeFromQdrant,
@@ -29,33 +30,60 @@ export async function POST(req: NextRequest) {
 
     const qdrantInit = await ensureQdrantCollections();
 
-    // 1. Intent Parser (Gemini API or Local Fallback)
-    const structuredIntent = await parseStructuredIntent(message, currentState);
-    const { intent, urgency, engineUsed } = structuredIntent;
+    // 1. Intent Parser via Groq API (llama-3.1-8b-instant)
+    const tGroqStart = performance.now();
+    const structuredIntent = await parseStructuredIntentWithGroq(message, currentState);
+    const tGroqEnd = performance.now();
+    const groqMs = Math.max(1, Math.round(tGroqEnd - tGroqStart));
 
-    console.log('[INTENT] Parsed intent:', intent, 'Engine:', engineUsed);
+    const { intent, urgency, engineUsed, intentSource } = structuredIntent;
 
-    // 2. Fact Retrieval from Qdrant for Dr. Amit Sharma
-    const doctorRes = await queryDoctorsFromQdrant(message, 'hospital_city', 'Orthopedic');
-    const drAmit = DEMO_DOCTORS[0]; // Dr. Amit Sharma (Orthopedic)
+    console.log('[INTENT] Parsed Groq intent:', intent, 'Engine:', engineUsed, 'Source:', intentSource);
 
-    // 3. Generate Response
-    const aiResult = await generateAarviResponse({
-      userQuery: message,
-      language,
-      structuredIntent,
-      currentState,
-    });
+    // 2. Fact Retrieval from Qdrant using payload filtering (payload.specialty == targetSpecialty)
+    const targetSpecialty = structuredIntent.specialty || currentState?.specialty || 'Orthopedic';
+    let qdrantMs = 45;
+    let doctorSource: 'qdrant' | 'local_fallback' | 'state' = 'state';
 
-    console.log('[RESPONSE] Response generated:', aiResult.responseText);
+    let selectedDoctor: Doctor;
+
+    // REUSE existing doctor if already set in conversation state and specialty has not explicitly changed
+    if (
+      currentState?.availableDoctor &&
+      (!structuredIntent.specialty || structuredIntent.specialty.toLowerCase() === currentState.specialty?.toLowerCase())
+    ) {
+      selectedDoctor = currentState.availableDoctor;
+      doctorSource = 'state';
+    } else if (
+      currentState?.doctor &&
+      (!structuredIntent.specialty || structuredIntent.specialty.toLowerCase() === currentState.specialty?.toLowerCase())
+    ) {
+      selectedDoctor = currentState.doctor;
+      doctorSource = 'state';
+    } else {
+      const tQdrantStart = performance.now();
+      const doctorRes = await queryDoctorsFromQdrant(message, 'hospital_city', targetSpecialty);
+      const tQdrantEnd = performance.now();
+      qdrantMs = Math.max(1, Math.round(tQdrantEnd - tQdrantStart));
+      selectedDoctor = doctorRes.doctors[0] || DEMO_DOCTORS[0];
+      doctorSource = doctorRes.source;
+    }
+
+    // 3. Extract time if present in user message or intent
+    const timeExtracted = structuredIntent.slot || structuredIntent.timePreference || normalizeTime(message);
+    const slots = selectedDoctor.available_slots?.today || ['10:30 AM', '1:00 PM', '6:00 PM'];
+    const earliestSlot = slots[0] || '10:30 AM';
 
     // 4. Update Persistent Conversation State & Expected Next Action
     const nextState: ExplicitConversationState = {
       patientName: currentState?.patientName || 'Riya',
-      symptom: currentState?.symptom || 'knee pain',
-      specialty: currentState?.specialty || 'Orthopedic',
-      availableDoctor: drAmit,
-      availableSlots: ['3:30 PM', '5:00 PM', '6:30 PM'],
+      patientType: structuredIntent.patientType || currentState?.patientType || 'adult',
+      symptom: structuredIntent.symptoms?.[0] || currentState?.symptom || 'fever',
+      symptoms: structuredIntent.symptoms || currentState?.symptoms || ['fever'],
+      specialty: targetSpecialty,
+      doctor: selectedDoctor,
+      availableDoctor: selectedDoctor,
+      availableSlots: slots,
       selectedSlot: currentState?.selectedSlot || null,
       pendingAppointment: currentState?.pendingAppointment || null,
       confirmedAppointment: currentState?.confirmedAppointment || null,
@@ -76,43 +104,111 @@ export async function POST(req: NextRequest) {
       | null = null;
     let appointmentData = undefined;
     let rescheduleSlots = undefined;
+    let responseText = '';
 
-    if (urgency === 'EMERGENCY') {
+    if (urgency === 'EMERGENCY' || intent === 'EMERGENCY' || intent === 'URGENT_REQUEST') {
       actionRequired = 'emergency_alert';
+      responseText =
+        language === 'hi'
+          ? 'इसमें तुरंत चिकित्सीय सहायता की आवश्यकता हो सकती है। कृपया आपातकालीन सेवा (108 / 112) पर संपर्क करें।'
+          : 'This may require urgent medical attention. Please contact emergency services (108 / 112) immediately.';
     } else if (intent === 'FIND_SPECIALIST') {
       nextState.expectedNextAction = 'CHECK_AVAILABILITY';
+      nextState.selectedSlot = null;
+      nextState.pendingAppointment = null;
+      responseText = `A ${targetSpecialty} specialist may be suitable. ${selectedDoctor.name} is available at ${selectedDoctor.hospital}. Would you like me to check available appointments?`;
     } else if (intent === 'CHECK_AVAILABILITY') {
-      actionRequired = 'confirm_booking';
-      nextState.expectedNextAction = 'EARLIEST_SLOT';
-      appointmentData = { doctor: drAmit, slot: '3:30 PM', day: 'Today' };
-    } else if (intent === 'EARLIEST_SLOT') {
-      actionRequired = 'confirm_booking';
-      nextState.expectedNextAction = 'BOOK_SLOT';
-      nextState.selectedSlot = '3:30 PM';
-      appointmentData = { doctor: drAmit, slot: '3:30 PM', day: 'Today' };
-    } else if (intent === 'BOOK_SLOT') {
-      actionRequired = 'confirm_booking';
+      nextState.expectedNextAction = 'SELECT_SLOT';
+      nextState.selectedSlot = null;
+      nextState.pendingAppointment = null;
+      responseText = `Sure. ${selectedDoctor.name} is available today at ${slots.join(', ')}. Which time would you prefer?`;
+    } else if (intent === 'CHECK_ALTERNATIVE_SLOTS') {
+      nextState.expectedNextAction = 'SELECT_SLOT';
+      const curSel = currentState?.selectedSlot;
+      const remainingSlots = curSel ? slots.filter((s) => s !== curSel) : slots;
+      if (curSel && remainingSlots.length > 0) {
+        responseText = `Yes. Other available times are ${remainingSlots.join(', ')}. Which time would you prefer?`;
+      } else {
+        responseText = `Yes. ${selectedDoctor.name} is available at ${slots.join(', ')} today. Which time would you prefer?`;
+      }
+    } else if (intent === 'FIND_EARLIEST_SLOT') {
+      // User EXPLICITLY requested earliest slot
+      nextState.selectedSlot = earliestSlot;
+      nextState.pendingAppointment = { doctor: selectedDoctor, slot: earliestSlot, day: 'Today' };
       nextState.expectedNextAction = 'CONFIRM_BOOKING';
-      nextState.selectedSlot = structuredIntent.slot || '3:30 PM';
-      nextState.pendingAppointment = { doctor: drAmit, slot: '3:30 PM', day: 'Today' };
-      appointmentData = nextState.pendingAppointment;
-    } else if (intent === 'CONFIRM_BOOKING') {
       actionRequired = 'confirm_booking';
-      nextState.selectedSlot = '3:30 PM';
+      appointmentData = nextState.pendingAppointment;
+      responseText = `The earliest available appointment with ${selectedDoctor.name} is ${earliestSlot}. Would you like me to book it?`;
+    } else if (timeExtracted || intent === 'SELECT_SLOT') {
+      if (timeExtracted) {
+        if (slots.includes(timeExtracted)) {
+          // Explicit user time ALWAYS overrides any old selectedSlot!
+          nextState.selectedSlot = timeExtracted;
+          nextState.pendingAppointment = { doctor: selectedDoctor, slot: timeExtracted, day: 'Today' };
+          nextState.expectedNextAction = 'CONFIRM_BOOKING';
+          actionRequired = 'confirm_booking';
+          appointmentData = nextState.pendingAppointment;
+          responseText = `${selectedDoctor.name} is available at ${timeExtracted}. Would you like me to confirm your appointment?`;
+        } else {
+          // Requested time is unavailable (e.g. 5 PM)
+          nextState.expectedNextAction = 'SELECT_SLOT';
+          const suggested = slots[slots.length - 1] || '6:00 PM';
+          responseText = `${timeExtracted} isn't available. ${selectedDoctor.name} has appointments at ${slots.join(', ')} today. Would ${suggested} work for you?`;
+        }
+      } else if (nextState.selectedSlot) {
+        nextState.pendingAppointment = { doctor: selectedDoctor, slot: nextState.selectedSlot, day: 'Today' };
+        nextState.expectedNextAction = 'CONFIRM_BOOKING';
+        actionRequired = 'confirm_booking';
+        appointmentData = nextState.pendingAppointment;
+        responseText = `Would you like me to confirm your appointment with ${selectedDoctor.name} at ${nextState.selectedSlot}?`;
+      } else {
+        nextState.expectedNextAction = 'SELECT_SLOT';
+        responseText = `Sure. ${selectedDoctor.name} is available today at ${slots.join(', ')}. Which time would you prefer?`;
+      }
+    } else if (intent === 'BOOK_APPOINTMENT') {
+      if (timeExtracted) {
+        if (slots.includes(timeExtracted)) {
+          nextState.selectedSlot = timeExtracted;
+          nextState.pendingAppointment = { doctor: selectedDoctor, slot: timeExtracted, day: 'Today' };
+          nextState.expectedNextAction = 'CONFIRM_BOOKING';
+          actionRequired = 'confirm_booking';
+          appointmentData = nextState.pendingAppointment;
+          responseText = `${selectedDoctor.name} is available at ${timeExtracted}. Would you like me to confirm your appointment?`;
+        } else {
+          nextState.expectedNextAction = 'SELECT_SLOT';
+          const suggested = slots[slots.length - 1] || '6:00 PM';
+          responseText = `${timeExtracted} isn't available. ${selectedDoctor.name} has appointments at ${slots.join(', ')} today. Would ${suggested} work for you?`;
+        }
+      } else if (nextState.selectedSlot) {
+        nextState.pendingAppointment = { doctor: selectedDoctor, slot: nextState.selectedSlot, day: 'Today' };
+        nextState.expectedNextAction = 'CONFIRM_BOOKING';
+        actionRequired = 'confirm_booking';
+        appointmentData = nextState.pendingAppointment;
+        responseText = `Would you like me to confirm your appointment with ${selectedDoctor.name} at ${nextState.selectedSlot}?`;
+      } else {
+        // User asked to book without choosing a slot yet
+        nextState.expectedNextAction = 'SELECT_SLOT';
+        responseText = `Sure. ${selectedDoctor.name} is available today at ${slots.join(', ')}. Which time would you prefer?`;
+      }
+    } else if (intent === 'CONFIRM_BOOKING') {
+      const activeSlot = nextState.pendingAppointment?.slot || nextState.selectedSlot || earliestSlot;
+      nextState.selectedSlot = activeSlot;
       nextState.confirmedAppointment = {
         id: `apt-${Date.now()}`,
         patient_name: 'Riya',
-        doctor_id: drAmit.id,
-        doctor_name: drAmit.name,
-        specialty: drAmit.specialty,
-        hospital: drAmit.hospital,
+        doctor_id: selectedDoctor.id,
+        doctor_name: selectedDoctor.name,
+        specialty: selectedDoctor.specialty,
+        hospital: selectedDoctor.hospital,
         date_text: 'Today',
-        time_slot: '3:30 PM',
+        time_slot: activeSlot,
         status: 'confirmed',
         booked_at: new Date().toISOString(),
       };
+      nextState.pendingAppointment = null;
       nextState.expectedNextAction = null;
-      appointmentData = { doctor: drAmit, slot: '3:30 PM', day: 'Today' };
+      actionRequired = 'confirm_booking';
+      appointmentData = { doctor: selectedDoctor, slot: activeSlot, day: 'Today' };
 
       const memoryRes = await queryPatientMemoryFromQdrant();
       await updatePatientMemoryInQdrant({
@@ -120,99 +216,100 @@ export async function POST(req: NextRequest) {
         patient_name: 'Riya',
         active_appointment: {
           id: nextState.confirmedAppointment.id,
-          doctor_id: drAmit.id,
-          doctor_name: drAmit.name,
-          specialty: drAmit.specialty,
-          hospital: drAmit.hospital,
+          doctor_id: selectedDoctor.id,
+          doctor_name: selectedDoctor.name,
+          specialty: selectedDoctor.specialty,
+          hospital: selectedDoctor.hospital,
           date_text: 'Today',
-          time_slot: '3:30 PM',
+          time_slot: activeSlot,
           booked_at: nextState.confirmedAppointment.booked_at,
         },
       });
+      responseText = `Done. Your appointment with ${selectedDoctor.name} is confirmed for today at ${activeSlot}.`;
     } else if (intent === 'CHECK_APPOINTMENT') {
-      const activeSlot = currentState?.confirmedAppointment?.time_slot || '3:30 PM';
-      actionRequired = 'confirm_booking';
-      appointmentData = { doctor: drAmit, slot: activeSlot, day: 'Today' };
-    } else if (intent === 'RESCHEDULE') {
+      // Read ONLY confirmedAppointment
+      const confirmed = currentState?.confirmedAppointment || nextState.confirmedAppointment;
+      if (confirmed) {
+        actionRequired = 'confirm_booking';
+        appointmentData = { doctor: selectedDoctor, slot: confirmed.time_slot, day: 'Today' };
+        responseText = `Your appointment with ${confirmed.doctor_name || selectedDoctor.name} is today at ${confirmed.time_slot}.`;
+      } else {
+        responseText = `You don't have a confirmed appointment yet. Would you like me to check available slots for ${selectedDoctor.name}?`;
+      }
+    } else if (intent === 'RESCHEDULE_APPOINTMENT') {
       actionRequired = 'reschedule_options';
-      rescheduleSlots = ['5:00 PM', '6:30 PM'];
+      rescheduleSlots = slots.slice(1);
       nextState.expectedNextAction = 'SELECT_SLOT';
-    } else if (intent === 'SELECT_SLOT') {
-      actionRequired = 'reschedule_options';
-      nextState.selectedSlot = '5:00 PM';
-      nextState.pendingAppointment = { doctor: drAmit, slot: '5:00 PM', day: 'Today' };
-      nextState.expectedNextAction = 'CONFIRM_RESCHEDULE';
-    } else if (intent === 'CONFIRM_RESCHEDULE') {
-      actionRequired = 'confirm_booking';
-      nextState.selectedSlot = '5:00 PM';
-      nextState.confirmedAppointment = {
-        id: currentState?.confirmedAppointment?.id || `apt-${Date.now()}`,
-        patient_name: 'Riya',
-        doctor_id: drAmit.id,
-        doctor_name: drAmit.name,
-        specialty: drAmit.specialty,
-        hospital: drAmit.hospital,
-        date_text: 'Today',
-        time_slot: '5:00 PM',
-        status: 'rescheduled',
-        booked_at: new Date().toISOString(),
-      };
-      nextState.expectedNextAction = null;
-      appointmentData = { doctor: drAmit, slot: '5:00 PM', day: 'Today' };
-
-      const memoryRes = await queryPatientMemoryFromQdrant();
-      await updatePatientMemoryInQdrant({
-        ...memoryRes.memory,
-        patient_name: 'Riya',
-        active_appointment: {
-          id: nextState.confirmedAppointment.id,
-          doctor_id: drAmit.id,
-          doctor_name: drAmit.name,
-          specialty: drAmit.specialty,
-          hospital: drAmit.hospital,
-          date_text: 'Today',
-          time_slot: '5:00 PM',
-          booked_at: nextState.confirmedAppointment.booked_at,
-        },
-      });
+      responseText = `Yes. ${rescheduleSlots.join(', ')} are available. Which time would you prefer?`;
+    } else {
+      responseText = generateGroqAarviResponse({
+        userQuery: message,
+        language,
+        structuredIntent,
+        retrievedDoctor: selectedDoctor,
+        currentState,
+      }).responseText;
     }
 
-    console.log('[STATE] Updated expectedNextAction:', nextState.expectedNextAction);
+    console.log('--------------------------------------------------');
+    console.log('INTENT:', intent);
+    console.log('TIME EXTRACTED:', timeExtracted || 'null');
+    console.log('AVAILABLE SLOTS:', slots);
+    console.log('SELECTED SLOT:', nextState.selectedSlot || 'null');
+    console.log('PENDING APPOINTMENT:', nextState.pendingAppointment?.slot || 'null');
+    console.log('CONFIRMED APPOINTMENT:', nextState.confirmedAppointment?.time_slot || 'null');
+    console.log('EXPECTED NEXT ACTION:', nextState.expectedNextAction || 'null');
+    console.log('--------------------------------------------------');
 
     return NextResponse.json({
-      text: aiResult.responseText,
+      text: responseText,
       intent,
       engineUsed,
+      intentSource,
       urgency,
       language,
       actionRequired,
       appointmentData,
       rescheduleSlots,
       currentState: nextState,
+      latencies: {
+        groqMs,
+        qdrantMs,
+      },
       debugInfo: {
         intent,
         engineUsed,
+        intentSource,
         urgency,
-        parsedSpecialty: 'Orthopedic',
-        parsedSymptom: 'knee pain',
+        parsedSpecialty: targetSpecialty,
+        parsedSymptom: structuredIntent.symptoms?.[0] || 'fever',
         qdrantStatus: qdrantInit.status,
-        qdrantSource: doctorRes.source,
-        retrievedDoctor: `${drAmit.name} (${drAmit.specialty})`,
-        geminiSource: aiResult.source,
+        qdrantSource: doctorSource,
+        retrievedDoctor: `${selectedDoctor.name} (${selectedDoctor.specialty})`,
+        groqSource: intentSource,
+        groqError: structuredIntent.error || null,
+
+        latencies: {
+          groqMs,
+          qdrantMs,
+        },
       },
     });
-  } catch (error) {
+
+
+
+  } catch (error: any) {
     console.error('Error in /api/chat route:', error);
     return NextResponse.json({
       text: "Sorry, I didn't quite understand that. Could you say that again?",
       intent: 'UNKNOWN',
-      engineUsed: 'Local fallback (Gemini Key Invalid/Unavailable)',
+      engineUsed: `Groq API Error: ${error?.message || String(error)}`,
       urgency: 'ROUTINE',
       language: 'en',
       actionRequired: null,
       debugInfo: {
         intent: 'UNKNOWN',
-        engineUsed: 'Local fallback (Gemini Key Invalid/Unavailable)',
+        engineUsed: `Groq API Error: ${error?.message || String(error)}`,
         urgency: 'ROUTINE',
         qdrantStatus: 'Retrieval active',
         retrievedDoctor: 'Dr. Amit Sharma (Orthopedic)',

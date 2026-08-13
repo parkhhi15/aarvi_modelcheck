@@ -122,8 +122,11 @@ export interface ChatMessage {
 
 export interface ExplicitConversationState {
   patientName: string;
+  patientType?: 'adult' | 'child' | null;
   symptom: string | null;
+  symptoms?: string[];
   specialty: string | null;
+  doctor?: Doctor | null;
   availableDoctor: Doctor | null;
   availableSlots: string[];
   selectedSlot: string | null;
@@ -134,26 +137,38 @@ export interface ExplicitConversationState {
   } | null;
   confirmedAppointment: Appointment | null;
   awaitingConfirmation: boolean;
-  expectedNextAction: 'CHECK_AVAILABILITY' | 'EARLIEST_SLOT' | 'BOOK_SLOT' | 'CONFIRM_BOOKING' | 'SELECT_SLOT' | 'CONFIRM_RESCHEDULE' | null;
+  expectedNextAction: string | null;
   conversationStarted: boolean;
   lastIntent: string | null;
   language: Language;
 }
 
+export interface StageLatencies {
+  sttMs?: number;
+  groqMs?: number;
+  qdrantMs?: number;
+  rimeMs?: number;
+}
+
 export interface SystemDebugState {
   lastQuery: string;
   intent: string;
-  intentEngine: 'Gemini API ✓' | 'Local fallback (Gemini Key Invalid/Unavailable)';
+  intentEngine: string;
+  intentSource: 'Groq' | 'Local Fallback';
   urgency: UrgencyLevel;
   qdrantHits: {
     collection: string;
     matches: string[];
     score: number;
   }[];
-  geminiStatus: 'idle' | 'processing' | 'success' | 'fallback';
+  groqStatus?: 'idle' | 'processing' | 'success' | 'fallback' | 'error';
+  geminiStatus?: 'idle' | 'processing' | 'success' | 'fallback';
   rimeStatus: 'idle' | 'processing' | 'success' | 'fallback';
   rimeAudioBytes?: number;
   language: Language;
   retrievalFallbackActive: boolean;
   hospitalId: string;
+  latencies?: StageLatencies;
 }
+
+

@@ -36,50 +36,97 @@ export const AARVI_SEED_RECORDS: AarviKnowledgeRecord[] = [
     text: 'Dr. Amit Sharma is an Orthopedic specialist with 12 years of experience. He provides Orthopedic consultations and speaks Hindi and English.',
     payload: {
       type: 'doctor',
-      doctor_id: 'DOC_ORTHO_001',
+      doctor_id: 'doc-1',
       doctor_name: 'Dr. Amit Sharma',
       specialty: 'Orthopedic',
       experience: '12 Years',
       languages: ['English', 'Hindi'],
-      hospital_id: 'DEMO_HOSPITAL',
+      hospital_id: 'hospital_city',
       text: 'Dr. Amit Sharma is an Orthopedic specialist with 12 years of experience. He provides Orthopedic consultations and speaks Hindi and English.',
     },
   },
   {
     id: 3,
-    text: 'Dr. Amit Sharma has Orthopedic appointments available today at 3:30 PM, 5:00 PM and 6:30 PM.',
+    text: 'Itchy skin, skin rash, acne, eczema, and skin irritation complaints are routed to Dermatologist Dr. Neha Singh.',
     payload: {
-      type: 'availability',
-      doctor_id: 'DOC_ORTHO_001',
-      doctor_name: 'Dr. Amit Sharma',
-      specialty: 'Orthopedic',
-      date_reference: 'today',
-      available_slots: ['3:30 PM', '5:00 PM', '6:30 PM'],
-      text: 'Dr. Amit Sharma has Orthopedic appointments available today at 3:30 PM, 5:00 PM and 6:30 PM.',
+      type: 'symptom_routing',
+      specialty: 'Dermatologist',
+      symptoms: ['itchy skin', 'skin rash', 'itching', 'acne'],
+      text: 'Itchy skin, skin rash, acne, eczema, and skin irritation complaints are routed to Dermatologist Dr. Neha Singh.',
     },
   },
   {
     id: 4,
-    text: 'Dr. Amit Sharma has Orthopedic appointments available tomorrow at 10:30 AM, 1:00 PM and 4:00 PM.',
+    text: 'Dr. Neha Singh is a Dermatologist specialist with 8 years of experience. She provides Dermatology consultations.',
     payload: {
-      type: 'availability',
-      doctor_id: 'DOC_ORTHO_001',
-      doctor_name: 'Dr. Amit Sharma',
-      specialty: 'Orthopedic',
-      date_reference: 'tomorrow',
-      available_slots: ['10:30 AM', '1:00 PM', '4:00 PM'],
-      text: 'Dr. Amit Sharma has Orthopedic appointments available tomorrow at 10:30 AM, 1:00 PM and 4:00 PM.',
+      type: 'doctor',
+      doctor_id: 'doc-2',
+      doctor_name: 'Dr. Neha Singh',
+      specialty: 'Dermatologist',
+      experience: '8 Years',
+      languages: ['English', 'Hindi'],
+      hospital_id: 'hospital_city',
+      text: 'Dr. Neha Singh is a Dermatologist specialist with 8 years of experience. She provides Dermatology consultations.',
     },
   },
   {
     id: 5,
-    text: 'घुटने में दर्द, जोड़ों में दर्द और पीठ दर्द जैसी समस्याओं के लिए Orthopedic विभाग में अपॉइंटमेंट की जानकारी दी जा सकती है।',
+    text: 'Fever, cough, cold, weakness, headache, and general health complaints are routed to General Physician Dr. Rohit Gupta.',
     payload: {
       type: 'symptom_routing',
-      specialty: 'Orthopedic',
-      language: 'hi',
-      symptoms: ['घुटने में दर्द', 'जोड़ों में दर्द', 'पीठ दर्द'],
-      text: 'घुटने में दर्द, जोड़ों में दर्द और पीठ दर्द जैसी समस्याओं के लिए Orthopedic विभाग में अपॉइंटमेंट की जानकारी दी जा सकती है।',
+      specialty: 'General Physician',
+      symptoms: ['fever', 'weakness', 'headache', 'cold'],
+      text: 'Fever, cough, cold, weakness, headache, and general health complaints are routed to General Physician Dr. Rohit Gupta.',
+    },
+  },
+  {
+    id: 6,
+    text: 'Child fever, infant health, and pediatric complaints are routed to Pediatrician Dr. Arjun Mehta.',
+    payload: {
+      type: 'symptom_routing',
+      specialty: 'Pediatrician',
+      symptoms: ['child fever', 'pediatric', 'kids health'],
+      text: 'Child fever, infant health, and pediatric complaints are routed to Pediatrician Dr. Arjun Mehta.',
+    },
+  },
+  {
+    id: 7,
+    text: 'Ear pain, throat pain, sinus, and hearing issues are routed to ENT Specialist Dr. Sameer Khanna.',
+    payload: {
+      type: 'symptom_routing',
+      specialty: 'ENT Specialist',
+      symptoms: ['ear pain', 'throat pain', 'sinus'],
+      text: 'Ear pain, throat pain, sinus, and hearing issues are routed to ENT Specialist Dr. Sameer Khanna.',
+    },
+  },
+  {
+    id: 8,
+    text: 'Eye irritation, blurry vision, and eye pain are routed to Ophthalmologist Dr. Ritu Bansal.',
+    payload: {
+      type: 'symptom_routing',
+      specialty: 'Ophthalmologist',
+      symptoms: ['eye irritation', 'eye pain', 'vision'],
+      text: 'Eye irritation, blurry vision, and eye pain are routed to Ophthalmologist Dr. Ritu Bansal.',
+    },
+  },
+  {
+    id: 9,
+    text: 'Toothache, dental cavity, and gum pain are routed to Dentist Dr. Vikas Patel.',
+    payload: {
+      type: 'symptom_routing',
+      specialty: 'Dentist',
+      symptoms: ['tooth pain', 'dental', 'toothache'],
+      text: 'Toothache, dental cavity, and gum pain are routed to Dentist Dr. Vikas Patel.',
+    },
+  },
+  {
+    id: 10,
+    text: 'Stomach pain, vomiting, acid reflux, and digestion issues are routed to Gastroenterologist Dr. Tanya Kapoor.',
+    payload: {
+      type: 'symptom_routing',
+      specialty: 'Gastroenterologist',
+      symptoms: ['stomach pain', 'vomiting', 'acid reflux'],
+      text: 'Stomach pain, vomiting, acid reflux, and digestion issues are routed to Gastroenterologist Dr. Tanya Kapoor.',
     },
   },
 ];
@@ -220,13 +267,278 @@ export async function searchAarviKnowledge(queryText: string): Promise<{
   return { results: fallbackResults.slice(0, 3), source: 'local_fallback' };
 }
 
+export const ALL_10_DOCTORS: Doctor[] = [
+  {
+    id: 'doc-1',
+    hospital_id: 'hospital_city',
+    name: 'Dr. Amit Sharma',
+    specialty: 'Orthopedic',
+    hospital: 'Aarogya Multispeciality Hospital',
+    experience: '12 years',
+    languages: ['Hindi', 'English'],
+    location: 'Noida',
+    rating: 4.8,
+    available_slots: {
+      today: ['3:30 PM', '5:00 PM', '6:30 PM'],
+      tomorrow: ['10:30 AM', '1:00 PM', '4:00 PM'],
+    },
+    consultation_fee: '₹800',
+  },
+  {
+    id: 'doc-2',
+    hospital_id: 'hospital_city',
+    name: 'Dr. Neha Singh',
+    specialty: 'Dermatologist',
+    hospital: 'Aarogya Multispeciality Hospital',
+    experience: '8 years',
+    languages: ['Hindi', 'English'],
+    location: 'Noida',
+    rating: 4.7,
+    available_slots: {
+      today: ['11:30 AM', '2:30 PM', '5:30 PM'],
+      tomorrow: ['10:00 AM', '1:30 PM', '4:30 PM'],
+    },
+    consultation_fee: '₹700',
+  },
+  {
+    id: 'doc-3',
+    hospital_id: 'hospital_city',
+    name: 'Dr. Pooja Verma',
+    specialty: 'Cardiologist',
+    hospital: 'CityCare Hospital',
+    experience: '15 years',
+    languages: ['Hindi', 'English'],
+    location: 'Delhi',
+    rating: 4.9,
+    available_slots: {
+      today: ['1:30 PM', '4:00 PM'],
+      tomorrow: ['11:00 AM', '2:30 PM', '5:00 PM'],
+    },
+    consultation_fee: '₹1200',
+  },
+  {
+    id: 'doc-4',
+    hospital_id: 'hospital_city',
+    name: 'Dr. Rohit Gupta',
+    specialty: 'General Physician',
+    hospital: 'CityCare Hospital',
+    experience: '10 years',
+    languages: ['Hindi', 'English'],
+    location: 'Delhi',
+    rating: 4.6,
+    available_slots: {
+      today: ['10:30 AM', '1:00 PM', '6:00 PM'],
+      tomorrow: ['9:30 AM', '12:30 PM', '4:30 PM'],
+    },
+    consultation_fee: '₹500',
+  },
+  {
+    id: 'doc-5',
+    hospital_id: 'hospital_city',
+    name: 'Dr. Arjun Mehta',
+    specialty: 'Pediatrician',
+    hospital: 'Aarogya Multispeciality Hospital',
+    experience: '11 years',
+    languages: ['Hindi', 'English'],
+    location: 'Noida',
+    rating: 4.8,
+    available_slots: {
+      today: ['2:00 PM', '4:30 PM'],
+      tomorrow: ['10:00 AM', '1:30 PM', '5:00 PM'],
+    },
+    consultation_fee: '₹650',
+  },
+  {
+    id: 'doc-6',
+    hospital_id: 'hospital_city',
+    name: 'Dr. Kavya Malhotra',
+    specialty: 'Gynecologist',
+    hospital: 'Aarogya Multispeciality Hospital',
+    experience: '13 years',
+    languages: ['Hindi', 'English'],
+    location: 'Noida',
+    rating: 4.9,
+    available_slots: {
+      today: ['3:00 PM', '6:00 PM'],
+      tomorrow: ['11:30 AM', '3:30 PM'],
+    },
+    consultation_fee: '₹900',
+  },
+  {
+    id: 'doc-7',
+    hospital_id: 'hospital_city',
+    name: 'Dr. Sameer Khanna',
+    specialty: 'ENT Specialist',
+    hospital: 'CityCare Hospital',
+    experience: '9 years',
+    languages: ['Hindi', 'English'],
+    location: 'Delhi',
+    rating: 4.7,
+    available_slots: {
+      today: ['1:00 PM', '5:30 PM'],
+      tomorrow: ['9:30 AM', '2:00 PM'],
+    },
+    consultation_fee: '₹600',
+  },
+  {
+    id: 'doc-8',
+    hospital_id: 'hospital_city',
+    name: 'Dr. Ritu Bansal',
+    specialty: 'Ophthalmologist',
+    hospital: 'CityCare Hospital',
+    experience: '14 years',
+    languages: ['Hindi', 'English'],
+    location: 'Delhi',
+    rating: 4.8,
+    available_slots: {
+      today: ['12:30 PM', '4:00 PM'],
+      tomorrow: ['10:30 AM', '1:00 PM', '4:30 PM'],
+    },
+    consultation_fee: '₹750',
+  },
+  {
+    id: 'doc-9',
+    hospital_id: 'hospital_city',
+    name: 'Dr. Vikram Sethi',
+    specialty: 'Dentist',
+    hospital: 'Aarogya Multispeciality Hospital',
+    experience: '10 years',
+    languages: ['Hindi', 'English'],
+    location: 'Noida',
+    rating: 4.6,
+    available_slots: {
+      today: ['11:30 AM', '3:30 PM'],
+      tomorrow: ['9:00 AM', '12:00 PM', '5:30 PM'],
+    },
+    consultation_fee: '₹500',
+  },
+  {
+    id: 'doc-10',
+    hospital_id: 'hospital_city',
+    name: 'Dr. Tanya Kapoor',
+    specialty: 'Gastroenterologist',
+    hospital: 'CityCare Hospital',
+    experience: '12 years',
+    languages: ['Hindi', 'English'],
+    location: 'Delhi',
+    rating: 4.8,
+    available_slots: {
+      today: ['2:30 PM', '6:30 PM'],
+      tomorrow: ['10:00 AM', '3:00 PM'],
+    },
+    consultation_fee: '₹1000',
+  },
+];
+
 export async function queryDoctorsFromQdrant(
   queryText: string,
   hospitalId: string = DEMO_HOSPITAL_ID,
   targetSpecialty?: string
 ): Promise<{ doctors: Doctor[]; source: 'qdrant' | 'local_fallback'; score: number }> {
-  return { doctors: DEMO_DOCTORS, source: isQdrantConnected ? 'qdrant' : 'local_fallback', score: 0.95 };
+  const client = getQdrantClient();
+
+  if (client) {
+    try {
+      // Qdrant Payload Filter query
+      const scrollOptions: any = {
+        limit: 100,
+        with_payload: true,
+      };
+
+      if (targetSpecialty) {
+        scrollOptions.filter = {
+          must: [
+            {
+              key: 'specialty',
+              match: {
+                value: targetSpecialty,
+              },
+            },
+          ],
+        };
+      }
+
+      let res = await client.scroll('doctors', scrollOptions);
+
+      // Fallback scroll without filter if exact match returned 0 due to case sensitivity
+      if ((!res || !res.points || res.points.length === 0) && targetSpecialty) {
+        res = await client.scroll('doctors', { limit: 100, with_payload: true });
+      }
+
+      if (res && res.points && res.points.length > 0) {
+        const allDoctors: Doctor[] = res.points.map((p: any) => {
+          const payload = p.payload || {};
+          return {
+            id: payload.id || `doc-${p.id}`,
+            hospital_id: hospitalId,
+            name: payload.name || 'Doctor',
+            specialty: payload.specialty || 'General Physician',
+            hospital: payload.hospital || 'Hospital',
+            experience: payload.experience || '10 years',
+            languages: payload.languages || ['Hindi', 'English'],
+            location: payload.location || 'Clinic',
+            rating: payload.rating || 4.8,
+            available_slots: payload.available_slots || { today: ['3:30 PM'], tomorrow: ['10:30 AM'] },
+            consultation_fee: payload.consultation_fee || '₹500',
+          };
+        });
+
+        if (targetSpecialty) {
+          const target = targetSpecialty.toLowerCase().trim();
+          const filtered = allDoctors.filter((d) => {
+            const spec = d.specialty.toLowerCase();
+            return (
+              spec.includes(target) ||
+              target.includes(spec) ||
+              (target.startsWith('derma') && spec.startsWith('derma')) ||
+              (target.startsWith('ortho') && spec.startsWith('ortho')) ||
+              (target.startsWith('cardio') && spec.startsWith('cardio')) ||
+              (target.startsWith('pediat') && spec.startsWith('pediat')) ||
+              (target.startsWith('gastro') && spec.startsWith('gastro')) ||
+              (target.startsWith('gyne') && spec.startsWith('gyne')) ||
+              (target.startsWith('ent') && spec.startsWith('ent')) ||
+              (target.startsWith('ophthal') && spec.startsWith('ophthal'))
+            );
+          });
+          if (filtered.length > 0) {
+            return { doctors: filtered, source: 'qdrant', score: 0.98 };
+          }
+        }
+
+        return { doctors: allDoctors, source: 'qdrant', score: 0.90 };
+      }
+    } catch (err) {
+      console.warn('Qdrant doctors query error, using local fallback:', err);
+    }
+  }
+
+  // Local Fallback by payload filtering
+  if (targetSpecialty) {
+    const target = targetSpecialty.toLowerCase().trim();
+    const matched = ALL_10_DOCTORS.filter((d) => {
+      const spec = d.specialty.toLowerCase();
+      return (
+        spec.includes(target) ||
+        target.includes(spec) ||
+        (target.startsWith('derma') && spec.startsWith('derma')) ||
+        (target.startsWith('ortho') && spec.startsWith('ortho')) ||
+        (target.startsWith('cardio') && spec.startsWith('cardio')) ||
+        (target.startsWith('pediat') && spec.startsWith('pediat')) ||
+        (target.startsWith('gastro') && spec.startsWith('gastro')) ||
+        (target.startsWith('gyne') && spec.startsWith('gyne')) ||
+        (target.startsWith('ent') && spec.startsWith('ent')) ||
+        (target.startsWith('ophthal') && spec.startsWith('ophthal'))
+      );
+    });
+    if (matched.length > 0) {
+      return { doctors: matched, source: 'local_fallback', score: 0.98 };
+    }
+  }
+
+  return { doctors: ALL_10_DOCTORS, source: 'local_fallback', score: 0.95 };
 }
+
+
 
 export async function queryHospitalKnowledgeFromQdrant(
   queryText: string

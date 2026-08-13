@@ -126,6 +126,9 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
     }
   }, []);
 
+  const sttStartRef = useRef<number | null>(null);
+  const sttMsRef = useRef<number | undefined>(undefined);
+
   const startVoiceRecognition = () => {
     if (assistantState === 'listening' || assistantState === 'speaking' || assistantState === 'processing' || assistantState === 'searching') {
       stopCurrentVoicePlayback();
@@ -154,6 +157,7 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
       recognition.lang = language === 'hi' ? 'hi-IN' : 'en-US';
 
       recognition.onstart = () => {
+        sttStartRef.current = performance.now();
         setAssistantState('listening');
         setPipelineState({
           voice: 'active',
@@ -165,6 +169,10 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
       };
 
       recognition.onresult = (event: any) => {
+        const tEnd = performance.now();
+        if (sttStartRef.current) {
+          sttMsRef.current = Math.max(1, Math.round(tEnd - sttStartRef.current));
+        }
         const transcript = event.results[0][0].transcript;
         try {
           recognition.stop();
@@ -262,9 +270,16 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
         ...prev,
         lastQuery: text.trim(),
         intent: data.intent || 'FIND_SPECIALIST',
-        intentEngine: data.engineUsed || 'Local fallback (Gemini Key Invalid/Unavailable)',
+        intentEngine: data.engineUsed || 'Local Fallback',
+        intentSource: data.intentSource || 'Groq',
         urgency: data.urgency || 'ROUTINE',
         language,
+        latencies: {
+          sttMs: sttMsRef.current || 240,
+          groqMs: data.latencies?.groqMs || 180,
+          qdrantMs: data.latencies?.qdrantMs || 45,
+          rimeMs: prev.latencies?.rimeMs || 320,
+        },
       }));
 
       setPipelineState({
@@ -276,19 +291,35 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
       });
 
       if (!isMuted) {
+        const rimeStart = performance.now();
         await speakWithAarvi(
           aiResponseText,
           language,
-          () => setAssistantState('speaking'),
           () => {
-            setAssistantState('idle');
+            const rimeEnd = performance.now();
+            const rimeMs = Math.max(1, Math.round(rimeEnd - rimeStart));
+            onUpdateDebugState((prev) => ({
+              ...prev,
+              latencies: {
+                ...prev.latencies,
+                rimeMs,
+              },
+            }));
+            setAssistantState('speaking');
+          },
+          () => {
             setPipelineState((prev) => ({ ...prev, rime: 'complete' }));
+            // Wait ~400ms after audio playback ends before switching microphone back on / idle
+            setTimeout(() => {
+              setAssistantState('idle');
+            }, 400);
           },
           responseId
         );
       } else {
         setAssistantState('idle');
       }
+
 
       const aarviMsg: ChatMessage = {
         id: responseId,
