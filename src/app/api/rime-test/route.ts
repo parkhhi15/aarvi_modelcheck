@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
-  return handleRimeTest('Hello Riya. I am Aarvi, your AI reception assistant.', 'eng');
+  return handleRimeTest('Hello. I am Aarvi, your AI reception assistant.', 'eng');
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
-    const text = body.text || 'Hello Riya. I am Aarvi, your AI reception assistant.';
+    const text = body.text || 'Hello. I am Aarvi, your AI reception assistant.';
     const lang = body.lang || 'eng';
     return handleRimeTest(text, lang);
   } catch (e) {
-    return handleRimeTest('Hello Riya. I am Aarvi, your AI reception assistant.', 'eng');
+    return handleRimeTest('Hello. I am Aarvi, your AI reception assistant.', 'eng');
   }
 }
 

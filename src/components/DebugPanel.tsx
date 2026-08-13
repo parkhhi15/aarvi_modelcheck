@@ -244,7 +244,7 @@ export const DebugPanel: React.FC<DebugPanelProps> = ({
             TRANSCRIPT
           </span>
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-900 text-emerald-300">
-            Patient: Riya
+            Patient Intake Active
           </span>
         </div>
         <p className="text-emerald-100 font-sans font-medium italic">

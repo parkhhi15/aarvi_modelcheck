@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ChevronUp,
   VolumeX,
+  Upload,
 } from 'lucide-react';
 
 interface VoiceAssistantProps {
@@ -27,6 +28,7 @@ interface VoiceAssistantProps {
   onConfirmBooking: (doc: Doctor, slot: string, day: string) => void;
   onRescheduleSlot: (slot: string) => void;
   onUpdateDebugState: (updater: (prev: SystemDebugState) => SystemDebugState) => void;
+  onOpenUploadPrescription?: () => void;
 }
 
 export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
@@ -37,6 +39,7 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
   onConfirmBooking,
   onRescheduleSlot,
   onUpdateDebugState,
+  onOpenUploadPrescription,
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
@@ -66,16 +69,17 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
 
   // Persistent Conversation State throughout active call
   const [conversationState, setConversationState] = useState<ExplicitConversationState>({
-    patientName: 'Riya',
-    symptom: 'knee pain',
-    specialty: 'Orthopedic',
-    availableDoctor: DEMO_DOCTORS[0],
-    availableSlots: ['3:30 PM', '5:00 PM', '6:30 PM'],
+    patientName: '',
+    patientAge: null,
+    symptom: null,
+    specialty: null,
+    availableDoctor: null,
+    availableSlots: [],
     selectedSlot: null,
     pendingAppointment: null,
     confirmedAppointment: null,
     awaitingConfirmation: false,
-    expectedNextAction: null,
+    expectedNextAction: 'ASK_NAME',
     conversationStarted: true,
     lastIntent: null,
     language,
@@ -96,13 +100,13 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
     };
   }, []);
 
-  // Initial Welcome Prompt for Riya (ONCE on mount)
+  // Initial Welcome Prompt for Receptionist Intake (ONCE on mount)
   useEffect(() => {
     const welcomeId = 'welcome-1';
     const welcomeText =
       language === 'hi'
-        ? `नमस्ते रिया! मैं आरवी हूँ, आपकी एआई रिसेप्शनिस्ट। मैं आज आपकी क्या सहायता कर सकती हूँ?`
-        : `Hello Riya, I'm Aarvi. How may I help you today?`;
+        ? `नमस्ते! सिटीकेयर अस्पताल में आपका स्वागत है। मैं आरवी हूँ, आपकी एआई रिसेप्शनिस्ट। क्या मैं पहले आपका नाम जान सकती हूँ?`
+        : `Hello! Welcome to City Medical Center. I'm Aarvi, your AI receptionist. May I please know your full name first?`;
 
     const welcomeMsg: ChatMessage = {
       id: welcomeId,
@@ -633,6 +637,20 @@ export const VoiceAssistant: React.FC<VoiceAssistantProps> = ({
           <Keyboard className="w-4 h-4" />
           <span className="hidden sm:inline">Keyboard</span>
         </button>
+
+        {onOpenUploadPrescription && (
+          <>
+            <div className="w-px h-5 bg-white/20" />
+            <button
+              onClick={onOpenUploadPrescription}
+              className="flex items-center gap-1.5 text-xs font-extrabold text-[#78DFCC] hover:text-white transition-all cursor-pointer"
+              title="Upload Prescription / Lab Report"
+            >
+              <Upload className="w-4 h-4 text-[#78DFCC]" />
+              <span className="hidden sm:inline">Upload Rx</span>
+            </button>
+          </>
+        )}
       </div>
 
     </div>

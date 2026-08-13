@@ -42,6 +42,7 @@ export interface HospitalKnowledgeItem {
 export interface PatientMemory {
   id: string;
   patient_name: string;
+  patient_age?: string | null;
   preferred_language: Language;
   previous_visit?: {
     doctor: string;
@@ -122,6 +123,7 @@ export interface ChatMessage {
 
 export interface ExplicitConversationState {
   patientName: string;
+  patientAge?: string | null;
   patientType?: 'adult' | 'child' | null;
   symptom: string | null;
   symptoms?: string[];

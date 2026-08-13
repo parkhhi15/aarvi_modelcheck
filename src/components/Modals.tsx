@@ -11,6 +11,7 @@ import {
   Pill,
   Search,
   Bone,
+  Upload,
 } from 'lucide-react';
 
 /* 1. BOOKING CONFIRMATION MODAL */
@@ -22,7 +23,8 @@ export const BookingModal: React.FC<{
   day: string;
   onConfirm: () => void;
   language: Language;
-}> = ({ isOpen, onClose, doctor, slot, day, onConfirm, language }) => {
+  patientName?: string;
+}> = ({ isOpen, onClose, doctor, slot, day, onConfirm, language, patientName }) => {
   if (!isOpen) return null;
 
   return (
@@ -54,7 +56,7 @@ export const BookingModal: React.FC<{
           <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#E4F1EE] text-xs">
             <div>
               <span className="text-[10px] text-[#527977] uppercase font-bold block">Patient:</span>
-              <span className="font-bold text-[#163A39]">Riya</span>
+              <span className="font-bold text-[#163A39]">{patientName || 'Patient'}</span>
             </div>
             <div>
               <span className="text-[10px] text-[#527977] uppercase font-bold block">Time Slot:</span>
@@ -149,7 +151,7 @@ export const MedicalRecordsModal: React.FC<{
         <div className="flex items-center justify-between border-b border-[#E4F1EE] pb-3">
           <h3 className="font-extrabold text-[#163A39] text-base flex items-center gap-2">
             <FileText className="w-5 h-5 text-[#0D7C7B]" />
-            <span>{language === 'hi' ? 'चिकित्सा रिकॉर्ड - रिया' : 'Medical Records — Riya'}</span>
+            <span>{language === 'hi' ? 'चिकित्सा रिकॉर्ड' : 'Medical Records'}</span>
           </h3>
           <button onClick={onClose} className="text-[#527977] hover:text-[#163A39] p-1">
             <X className="w-5 h-5" />
@@ -238,7 +240,7 @@ export const DoctorBrowseModal: React.FC<{
         <div className="flex items-center justify-between border-b border-[#E4F1EE] pb-3">
           <h3 className="font-extrabold text-[#163A39] text-base flex items-center gap-2">
             <Search className="w-5 h-5 text-[#0D7C7B]" />
-            <span>{language === 'hi' ? 'ऑर्थोपेडिक डॉक्टर' : 'Orthopedic Specialist'}</span>
+            <span>{language === 'hi' ? 'अस्पताल के डॉक्टर (10 विशेषज्ञ)' : 'Browse Hospital Doctors (10 Specialists)'}</span>
           </h3>
           <button onClick={onClose} className="text-[#527977] hover:text-[#163A39] p-1">
             <X className="w-5 h-5" />
@@ -271,6 +273,162 @@ export const DoctorBrowseModal: React.FC<{
             </div>
           ))}
         </div>
+      </div>
+    </div>
+  );
+};
+
+/* 6. PRESCRIPTION / REPORT UPLOAD MODAL */
+export const PrescriptionUploadModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onUploadComplete: (data: {
+    fileName: string;
+    doctorName: string;
+    specialty: string;
+    medicines: string;
+    nextAppointmentDate: string;
+    diagnosis: string;
+  }) => void;
+  onBookExtractedAppointment: (specialty: string, doctorName: string, date: string) => void;
+  language: Language;
+}> = ({ isOpen, onClose, onUploadComplete, onBookExtractedAppointment, language }) => {
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
+  const [isScanning, setIsScanning] = React.useState(false);
+  const [extractedData, setExtractedData] = React.useState<{
+    fileName: string;
+    doctorName: string;
+    specialty: string;
+    medicines: string;
+    nextAppointmentDate: string;
+    diagnosis: string;
+  } | null>(null);
+
+  if (!isOpen) return null;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedFile(file);
+      if (file.type.startsWith('image/')) {
+        setPreviewUrl(URL.createObjectURL(file));
+      } else {
+        setPreviewUrl(null);
+      }
+      simulateExtraction(file.name);
+    }
+  };
+
+  const simulateExtraction = (fileName: string) => {
+    setIsScanning(true);
+    setTimeout(() => {
+      setIsScanning(false);
+      const mockResult = {
+        fileName,
+        doctorName: 'Dr. Amit Sharma',
+        specialty: 'Orthopedic',
+        medicines: 'Tab. Paracetamol 650mg (Twice daily), Gel JointFlex (Apply night)',
+        nextAppointmentDate: '7 Days Later (20 August 2026)',
+        diagnosis: 'Knee Joint Inflammation & Strain',
+      };
+      setExtractedData(mockResult);
+      onUploadComplete(mockResult);
+    }, 1200);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white rounded-3xl p-6 max-w-lg w-full border border-[#E4F1EE] shadow-2xl space-y-4 font-sans max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-[#E4F1EE] pb-3">
+          <h3 className="font-extrabold text-[#163A39] text-base flex items-center gap-2">
+            <Upload className="w-5 h-5 text-[#0D7C7B]" />
+            <span>{language === 'hi' ? 'प्रिस्क्रिप्शन व रिपोर्ट अपलोड करें' : 'Upload Prescription / Report'}</span>
+          </h3>
+          <button onClick={onClose} className="text-[#527977] hover:text-[#163A39] p-1">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Drag & Drop File Upload Area */}
+        <div className="border-2 border-dashed border-[#CBE5E1] hover:border-[#0D7C7B] bg-[#F7FBFA] rounded-2xl p-6 text-center space-y-3 transition-colors cursor-pointer relative">
+          <input
+            type="file"
+            accept="image/*,.pdf"
+            onChange={handleFileChange}
+            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+          />
+          <div className="w-12 h-12 rounded-full bg-[#EBF7F5] text-[#0D7C7B] flex items-center justify-center mx-auto border border-[#BFE8E2]">
+            <Upload className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-[#163A39]">
+              {selectedFile ? selectedFile.name : (language === 'hi' ? 'फ़ाइल चुनने या फ़ोटो लेने के लिए क्लिक करें' : 'Click to Upload Prescription or Lab Report')}
+            </p>
+            <p className="text-[11px] text-[#527977] mt-0.5">Supports JPG, PNG, WEBP, PDF (Max 10MB)</p>
+          </div>
+        </div>
+
+        {/* Scanning Indicator */}
+        {isScanning && (
+          <div className="bg-[#EBF7F5] p-4 rounded-2xl border border-[#BFE8E2] text-center space-y-2 animate-pulse">
+            <p className="text-xs font-extrabold text-[#0D7C7B]">
+              🔍 {language === 'hi' ? 'प्रिस्क्रिप्शन से दवाइयाँ और अगली अपॉइंटमेंट निकाली जा रही है...' : 'OCR Scanning Prescription & Extracting Reports & Appointments...'}
+            </p>
+          </div>
+        )}
+
+        {/* Extracted Details Result Card */}
+        {extractedData && !isScanning && (
+          <div className="bg-[#F0F9F8] p-4 rounded-2xl border border-[#CBE5E1] space-y-3">
+            <div className="flex items-center justify-between border-b border-[#CBE5E1] pb-2">
+              <span className="text-[11px] font-extrabold text-[#0D7C7B] uppercase tracking-wider">
+                ✓ Prescription Extracted
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white text-[#163A39]">
+                OCR Ready
+              </span>
+            </div>
+
+            {previewUrl && (
+              <div className="w-full h-32 rounded-xl overflow-hidden border border-[#CBE5E1] bg-black/5 flex items-center justify-center">
+                <img src={previewUrl} alt="Prescription preview" className="object-cover h-full w-full" />
+              </div>
+            )}
+
+            <div className="space-y-1.5 text-xs">
+              <div>
+                <span className="font-bold text-[#527977]">Doctor & Specialty: </span>
+                <span className="font-extrabold text-[#163A39]">{extractedData.doctorName} ({extractedData.specialty})</span>
+              </div>
+              <div>
+                <span className="font-bold text-[#527977]">Diagnosis: </span>
+                <span className="font-extrabold text-[#163A39]">{extractedData.diagnosis}</span>
+              </div>
+              <div>
+                <span className="font-bold text-[#527977]">Prescribed Medicines: </span>
+                <span className="font-bold text-[#0D7C7B] block mt-0.5">{extractedData.medicines}</span>
+              </div>
+              <div className="pt-2 border-t border-[#CBE5E1]">
+                <span className="font-bold text-[#527977]">Extracted Follow-up Date: </span>
+                <span className="font-extrabold text-emerald-700 block mt-0.5">{extractedData.nextAppointmentDate}</span>
+              </div>
+            </div>
+
+            <div className="pt-2 flex gap-2">
+              <button
+                onClick={() => {
+                  onBookExtractedAppointment(extractedData.specialty, extractedData.doctorName, extractedData.nextAppointmentDate);
+                  onClose();
+                }}
+                className="w-full py-2.5 bg-[#0D7C7B] hover:bg-[#095A59] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5"
+              >
+                <Calendar className="w-4 h-4" />
+                <span>{language === 'hi' ? 'अगली अपॉइंटमेंट बुक करें' : 'Track & Book Extracted Follow-up'}</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

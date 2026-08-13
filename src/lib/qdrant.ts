@@ -359,8 +359,8 @@ export const ALL_10_DOCTORS: Doctor[] = [
     location: 'Noida',
     rating: 4.9,
     available_slots: {
-      today: ['3:00 PM', '6:00 PM'],
-      tomorrow: ['11:30 AM', '3:30 PM'],
+      today: [],
+      tomorrow: ['10:00 AM', '2:00 PM', '4:30 PM'],
     },
     consultation_fee: '₹900',
   },

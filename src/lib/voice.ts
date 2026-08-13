@@ -34,7 +34,7 @@ export async function testRimeSoundDirectly(): Promise<{ success: boolean; bytes
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        text: 'Hello Riya. I am Aarvi, your AI reception assistant.',
+        text: 'Hello. I am Aarvi, your AI reception assistant.',
         lang: 'eng',
       }),
     });

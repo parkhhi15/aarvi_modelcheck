@@ -13,6 +13,7 @@ import {
   MedicalRecordsModal,
   MedicineModal,
   DoctorBrowseModal,
+  PrescriptionUploadModal,
 } from '@/components/Modals';
 import { Terminal } from 'lucide-react';
 
@@ -50,7 +51,7 @@ export default function Home() {
 
   // Modal Dialog States
   const [activeModal, setActiveModal] = useState<
-    'book' | 'reschedule' | 'records' | 'medicines' | 'doctors' | null
+    'book' | 'reschedule' | 'records' | 'medicines' | 'doctors' | 'upload_prescription' | null
   >(null);
   const [selectedDoctorForBooking, setSelectedDoctorForBooking] = useState<{
     doctor: Doctor;
@@ -90,7 +91,8 @@ export default function Home() {
 
     speakWithAarvi(confirmSpeechText, language);
 
-    const memoryLog = `Riya booked ${doc.name} (${doc.specialty}) for ${day} at ${slot}.`;
+    const nameToLog = patientMemory.patient_name || 'Patient';
+    const memoryLog = `${nameToLog} booked ${doc.name} (${doc.specialty}) for ${day} at ${slot}.`;
     setPatientMemory((prev) => ({
       ...prev,
       active_appointment: {
@@ -125,7 +127,8 @@ export default function Home() {
 
       speakWithAarvi(rescheduleSpeechText, language);
 
-      const memoryLog = `Riya rescheduled appointment with ${activeAppointment.doctor_name} to evening slot: ${newSlot}.`;
+      const nameToLog = patientMemory.patient_name || 'Patient';
+      const memoryLog = `${nameToLog} rescheduled appointment with ${activeAppointment.doctor_name} to evening slot: ${newSlot}.`;
       setPatientMemory((prev) => ({
         ...prev,
         active_appointment: {
@@ -163,6 +166,7 @@ export default function Home() {
           setDebugState((prev) => ({ ...prev, language: lang }));
         }}
         onLogoClick={() => setCurrentScreen('voice')}
+        onOpenUploadPrescription={() => setActiveModal('upload_prescription')}
       />
 
       {/* Main Content Render Area */}
@@ -181,6 +185,7 @@ export default function Home() {
           }}
           onRescheduleSlot={handleRescheduleSlot}
           onUpdateDebugState={setDebugState}
+          onOpenUploadPrescription={() => setActiveModal('upload_prescription')}
         />
       </main>
 
@@ -221,6 +226,7 @@ export default function Home() {
           )
         }
         language={language}
+        patientName={patientMemory.patient_name}
       />
 
       <RescheduleModal
@@ -252,6 +258,36 @@ export default function Home() {
             doctor: doc,
             slot: doc.available_slots.today?.[0] || '3:30 PM',
             day: 'Today',
+          });
+          setActiveModal('book');
+        }}
+        language={language}
+      />
+
+      <PrescriptionUploadModal
+        isOpen={activeModal === 'upload_prescription'}
+        onClose={() => setActiveModal(null)}
+        onUploadComplete={(data) => {
+          setPatientMemory((prev) => ({
+            ...prev,
+            recent_prescription: {
+              medicine: data.medicines,
+              dosage: 'As prescribed',
+              instructions: `Extracted from uploaded ${data.fileName}: ${data.diagnosis}`,
+              instructions_hi: `अपलोड की गई फ़ाइल से निकाला गया: ${data.diagnosis}`,
+            },
+            history_logs: [
+              `Uploaded prescription file ${data.fileName} for ${data.specialty}. Next appointment extracted: ${data.nextAppointmentDate}.`,
+              ...prev.history_logs,
+            ],
+          }));
+        }}
+        onBookExtractedAppointment={(specialty, doctorName, date) => {
+          const doc = DEMO_DOCTORS.find((d) => d.name === doctorName) || DEMO_DOCTORS[0];
+          setSelectedDoctorForBooking({
+            doctor: doc,
+            slot: '11:00 AM',
+            day: 'Tomorrow',
           });
           setActiveModal('book');
         }}

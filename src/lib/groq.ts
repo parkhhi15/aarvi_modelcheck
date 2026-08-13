@@ -18,11 +18,16 @@ export type UnifiedQueryIntent =
   | 'CLINIC_INFO'
   | 'URGENT_REQUEST'
   | 'GREETING'
+  | 'SET_NAME'
+  | 'SET_AGE'
+  | 'CHECK_PRESCRIPTION'
   | 'EMERGENCY'
   | 'UNKNOWN';
 
 export interface GroqStructuredIntent {
   intent: UnifiedQueryIntent;
+  patientName?: string | null;
+  patientAge?: string | null;
   patientType?: 'adult' | 'child' | null;
   symptoms: string[];
   specialty: string | null;
@@ -42,19 +47,38 @@ export function normalizeTime(raw: string): string | null {
   if (!raw) return null;
   const q = raw.toLowerCase().trim();
 
-  if (q.includes('evening')) return '6:00 PM';
+  // Explicit time with minutes checked FIRST
+  if (q.includes('9:00') || q.includes('9.00')) return '9:00 AM';
+  if (q.includes('9:30') || q.includes('9.30')) return '9:30 AM';
+  if (q.includes('10:00') || q.includes('10.00')) return '10:00 AM';
   if (q.includes('10:30') || q.includes('10.30')) return '10:30 AM';
-  if (q.includes('1:00') || q.includes('1.00') || q.includes('1 pm') || q.includes('1pm') || (/\b1\b/.test(q) && (q.includes('pm') || q.includes('p.m.')))) return '1:00 PM';
+  if (q.includes('11:00') || q.includes('11.00')) return '11:00 AM';
+  if (q.includes('11:30') || q.includes('11.30')) return '11:30 AM';
+  if (q.includes('12:00') || q.includes('12.00')) return '12:00 PM';
+  if (q.includes('12:30') || q.includes('12.30')) return '12:30 PM';
+  if (q.includes('1:30') || q.includes('1.30')) return '1:30 PM';
+  if (q.includes('1:00') || q.includes('1.00')) return '1:00 PM';
+  if (q.includes('2:30') || q.includes('2.30')) return '2:30 PM';
+  if (q.includes('2:00') || q.includes('2.00')) return '2:00 PM';
   if (q.includes('3:30') || q.includes('3.30')) return '3:30 PM';
-  if (q.includes('5:00') || q.includes('5.00') || q.includes('5 pm') || q.includes('5pm') || (/\b5\b/.test(q) && (q.includes('pm') || q.includes('p.m.')))) return '5:00 PM';
-  if (q.includes('6:00') || q.includes('6.00') || q.includes('6 pm') || q.includes('6pm') || q.includes('6 p.m.') || q.includes('6 baje') || (/\b6\b/.test(q) && (q.includes('pm') || q.includes('p.m.') || q.includes('baje')))) return '6:00 PM';
+  if (q.includes('3:00') || q.includes('3.00')) return '3:00 PM';
+  if (q.includes('4:30') || q.includes('4.30')) return '4:30 PM';
+  if (q.includes('4:00') || q.includes('4.00')) return '4:00 PM';
+  if (q.includes('5:30') || q.includes('5.30')) return '5:30 PM';
+  if (q.includes('5:00') || q.includes('5.00')) return '5:00 PM';
+  if (q.includes('6:30') || q.includes('6.30')) return '6:30 PM';
+  if (q.includes('6:00') || q.includes('6.00')) return '6:00 PM';
+  if (q.includes('evening')) return '6:00 PM';
 
-  // Standalone numbers when context implies time
-  if (/\b10:30\b/.test(q)) return '10:30 AM';
-  if (/\b1\b/.test(q) && !q.includes('10') && !q.includes('11') && !q.includes('12')) return '1:00 PM';
-  if (/\b3:30\b/.test(q)) return '3:30 PM';
-  if (/\b5\b/.test(q)) return '5:00 PM';
-  if (/\b6\b/.test(q)) return '6:00 PM';
+  // Standalone hour matches when no minutes specified (e.g. "1 pm", "1pm")
+  if (/\b1\s*(pm|p\.m\.)\b/.test(q)) return '1:00 PM';
+  if (/\b2\s*(pm|p\.m\.)\b/.test(q)) return '2:00 PM';
+  if (/\b3\s*(pm|p\.m\.)\b/.test(q)) return '3:00 PM';
+  if (/\b4\s*(pm|p\.m\.)\b/.test(q)) return '4:00 PM';
+  if (/\b5\s*(pm|p\.m\.)\b/.test(q)) return '5:00 PM';
+  if (/\b6\s*(pm|p\.m\.)\b/.test(q)) return '6:00 PM';
+  if (/\b10\s*(am|a\.m\.)\b/.test(q)) return '10:00 AM';
+  if (/\b11\s*(am|a\.m\.)\b/.test(q)) return '11:00 AM';
 
   return null;
 }
@@ -183,6 +207,19 @@ export function parseLocalRuleIntent(
     intent = 'SELECT_SLOT';
     timePreference = slot;
   } else if (
+    q.includes('prescription') ||
+    q.includes('next visit') ||
+    q.includes('when to visit') ||
+    q.includes('when do i have to visit') ||
+    q.includes('when should i visit') ||
+    q.includes('follow up') ||
+    q.includes('follow-up') ||
+    q.includes('next time') ||
+    q.includes('purana parcha') ||
+    q.includes('report')
+  ) {
+    intent = 'CHECK_PRESCRIPTION';
+  } else if (
     q.includes('when is my appointment') ||
     q.includes('what time is my appointment') ||
     q.includes('my appointment')
@@ -235,38 +272,80 @@ export function parseLocalRuleIntent(
     intent = 'RESCHEDULE_APPOINTMENT';
   }
 
-  // PRIORITY 2: Medical Specialty Rule Mapping (if intent not yet set or for symptom extraction)
+  // PRIORITY 2: Medical Specialty & Doctor Name Rule Mapping
   let extractedSpecialty: string | null = null;
-  if (q.includes('knee') || q.includes('joint pain') || q.includes('back pain') || q.includes('orthopedic') || q.includes('घुटने')) {
+  let extractedDoctorName: string | null = null;
+
+  if (q.includes('kavya') || q.includes('malhotra')) {
+    extractedSpecialty = 'Gynecologist';
+    extractedDoctorName = 'Dr. Kavya Malhotra';
+    symptoms = ['gynecologist consultation'];
+  } else if (q.includes('neha') || q.includes('singh')) {
+    extractedSpecialty = 'Dermatologist';
+    extractedDoctorName = 'Dr. Neha Singh';
+    symptoms = ['dermatology consultation'];
+  } else if (q.includes('rajesh') || q.includes('srivastava')) {
+    extractedSpecialty = 'Cardiologist';
+    extractedDoctorName = 'Dr. Rajesh Srivastava';
+    symptoms = ['cardiology consultation'];
+  } else if (q.includes('ananya') || q.includes('verma')) {
+    extractedSpecialty = 'General Physician';
+    extractedDoctorName = 'Dr. Ananya Verma';
+    symptoms = ['general consultation'];
+  } else if (q.includes('rohan') || q.includes('mehta')) {
+    extractedSpecialty = 'Pediatrician';
+    extractedDoctorName = 'Dr. Rohan Mehta';
+    symptoms = ['pediatric consultation'];
+  } else if (q.includes('sameer') || q.includes('khanna')) {
+    extractedSpecialty = 'ENT Specialist';
+    extractedDoctorName = 'Dr. Sameer Khanna';
+    symptoms = ['ENT consultation'];
+  } else if (q.includes('ritu') || q.includes('bansal')) {
+    extractedSpecialty = 'Ophthalmologist';
+    extractedDoctorName = 'Dr. Ritu Bansal';
+    symptoms = ['eye consultation'];
+  } else if (q.includes('vikram') || q.includes('sethi')) {
+    extractedSpecialty = 'Dentist';
+    extractedDoctorName = 'Dr. Vikram Sethi';
+    symptoms = ['dental consultation'];
+  } else if (q.includes('tanya') || q.includes('kapoor')) {
+    extractedSpecialty = 'Gastroenterologist';
+    extractedDoctorName = 'Dr. Tanya Kapoor';
+    symptoms = ['gastro consultation'];
+  } else if (q.includes('amit') || q.includes('sharma')) {
+    extractedSpecialty = 'Orthopedic';
+    extractedDoctorName = 'Dr. Amit Sharma';
+    symptoms = ['orthopedic consultation'];
+  } else if (q.includes('knee') || q.includes('joint') || q.includes('back pain') || q.includes('ortho') || q.includes('bone') || q.includes('घुटने')) {
     extractedSpecialty = 'Orthopedic';
     symptoms = ['knee pain'];
-  } else if (q.includes('rash') || q.includes('itching') || q.includes('skin') || q.includes('dermatologist')) {
+  } else if (q.includes('rash') || q.includes('itch') || q.includes('skin') || q.includes('acne') || q.includes('derma')) {
     extractedSpecialty = 'Dermatologist';
     symptoms = ['skin rash'];
-  } else if ((q.includes('fever') || q.includes('weakness') || q.includes('headache') || q.includes('fatigue')) && !q.includes('child')) {
-    extractedSpecialty = 'General Physician';
-    symptoms = ['fever and weakness'];
-  } else if (q.includes('child') || /\bkid\b/.test(q) || /\bkids\b/.test(q) || q.includes('baby')) {
-    extractedSpecialty = 'Pediatrician';
-    symptoms = ['child fever'];
-  } else if (q.includes('ear pain') || q.includes('ear hurt') || q.includes('earache') || q.includes('throat') || /\bent\b/.test(q)) {
-    extractedSpecialty = 'ENT Specialist';
-    symptoms = ['ear pain'];
-  } else if (/\beye\b/.test(q) || /\beyes\b/.test(q) || q.includes('ophthalmologist')) {
-    extractedSpecialty = 'Ophthalmologist';
-    symptoms = ['eye irritation'];
-  } else if (q.includes('tooth') || q.includes('dental') || q.includes('dentist')) {
-    extractedSpecialty = 'Dentist';
-    symptoms = ['tooth pain'];
-  } else if (q.includes('stomach') || q.includes('vomiting') || q.includes('digestive') || q.includes('gastroenterologist')) {
-    extractedSpecialty = 'Gastroenterologist';
-    symptoms = ['stomach pain'];
-  } else if (q.includes('pregnancy') || q.includes('women') || q.includes('gynecologist')) {
-    extractedSpecialty = 'Gynecologist';
-    symptoms = ['pregnancy check-up'];
-  } else if (q.includes('heart') || q.includes('cardiac') || q.includes('cardiologist')) {
+  } else if (q.includes('heart') || q.includes('cardiac') || q.includes('cardio') || q.includes('cardiologist')) {
     extractedSpecialty = 'Cardiologist';
     symptoms = ['cardiac checkup'];
+  } else if (q.includes('pregnan') || q.includes('women') || q.includes('gynecology') || q.includes('gynecolog') || q.includes('gynecologist')) {
+    extractedSpecialty = 'Gynecologist';
+    symptoms = ['pregnancy check-up'];
+  } else if (q.includes('child') || /\bkid\b/.test(q) || /\bkids\b/.test(q) || q.includes('baby') || q.includes('pediatr')) {
+    extractedSpecialty = 'Pediatrician';
+    symptoms = ['child fever'];
+  } else if ((q.includes('fever') || q.includes('weakness') || q.includes('headache') || q.includes('fatigue') || q.includes('cold') || q.includes('cough') || q.includes('physician')) && !q.includes('child') && !/\bkid\b/.test(q)) {
+    extractedSpecialty = 'General Physician';
+    symptoms = ['fever and weakness'];
+  } else if ((/\bear\b/.test(q) || /\bears\b/.test(q) || q.includes('earache') || q.includes('throat') || q.includes('sinus') || /\bent\b/.test(q)) && !q.includes('years') && !q.includes('year')) {
+    extractedSpecialty = 'ENT Specialist';
+    symptoms = ['ear pain'];
+  } else if (/\beye\b/.test(q) || /\beyes\b/.test(q) || q.includes('vision') || q.includes('ophthalm')) {
+    extractedSpecialty = 'Ophthalmologist';
+    symptoms = ['eye irritation'];
+  } else if (q.includes('tooth') || q.includes('teeth') || q.includes('dental') || q.includes('dentist') || q.includes('dentistry')) {
+    extractedSpecialty = 'Dentist';
+    symptoms = ['tooth pain'];
+  } else if (q.includes('stomach') || q.includes('vomit') || q.includes('acidity') || q.includes('digest') || q.includes('gastro')) {
+    extractedSpecialty = 'Gastroenterologist';
+    symptoms = ['stomach pain'];
   } else if (q.includes('hi') || q.includes('hello') || q.includes('namaste')) {
     if (intent === 'UNKNOWN') intent = 'GREETING';
   }
@@ -291,21 +370,22 @@ export function parseLocalRuleIntent(
 
   // PRIORITY 3: Affirmative Responses & Context Disambiguation against expectedNextAction
   const isAffirmative =
-    q === 'yes' ||
-    q === 'yes.' ||
-    q === 'yeah' ||
-    q === 'yep' ||
-    q === 'sure' ||
-    q === 'okay' ||
-    q === 'ok' ||
-    q === 'please' ||
-    q === 'yes please' ||
-    q === 'please check' ||
-    q === 'check' ||
-    q === 'book' ||
-    q === 'book it' ||
+    q.includes('yes') ||
+    q.includes('yeah') ||
+    q.includes('yep') ||
+    q.includes('sure') ||
+    q.includes('okay') ||
+    q.includes('ok') ||
+    q.includes('please') ||
+    q.includes('check') ||
+    q.includes('tomorrow') ||
+    q.includes('ha') ||
+    q.includes('haan') ||
+    q.includes('kal') ||
+    q.includes('please check') ||
+    q.includes('book') ||
+    q.includes('book it') ||
     q.includes('confirm') ||
-    q.includes('go ahead') ||
     q.includes('i want an appointment') ||
     q.includes('appointment') ||
     q.includes('show slots') ||
@@ -320,12 +400,54 @@ export function parseLocalRuleIntent(
   }
 
 
+  // NAME EXTRACTION
+  let extractedPatientName: string | null = currentState?.patientName || null;
+  const namePatternMatch = message.match(/(?:my name is|i am|this is|call me|name is|name's)\s+([A-Za-z]+)/i);
+  if (namePatternMatch && namePatternMatch[1]) {
+    const rawName = namePatternMatch[1].trim();
+    const reserved = [
+      'a', 'the', 'booking', 'doctor', 'appointment', 'here', 'ready', 'fine', 'good', 'asking', 'checking',
+      'pregnant', 'sick', 'unwell', 'suffering', 'having', 'looking', 'searching', 'trying', 'seeking', 'in',
+      'facing', 'feeling', 'experienced', 'having', 'a', 'an'
+    ];
+    if (!reserved.includes(rawName.toLowerCase())) {
+      extractedPatientName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
+      if (intent === 'UNKNOWN') intent = 'SET_NAME';
+    }
+  } else if ((!currentState?.patientName || expected === 'ASK_NAME') && /^[A-Za-z]{2,20}$/.test(message.trim())) {
+    const word = message.trim().toLowerCase();
+    const reservedWords = [
+      'hi', 'hello', 'hey', 'namaste', 'fever', 'headache', 'pain', 'knee', 'doctor', 'help', 'yes', 'no',
+      'today', 'tomorrow', 'slot', 'slots', 'time', 'book', 'booking', 'check', 'cancel', 'urgent', 'emergency',
+      'cough', 'cold', 'stomach', 'skin', 'eye', 'throat', 'ear', 'back', 'joint', 'chest', 'child', 'kid',
+      'adult', 'male', 'female', 'man', 'woman', 'prescription', 'report', 'lab', 'test', 'summary'
+    ];
+    if (!reservedWords.includes(word)) {
+      extractedPatientName = word.charAt(0).toUpperCase() + word.slice(1);
+      intent = 'SET_NAME';
+    }
+  }
+
+  // AGE EXTRACTION
+  let extractedPatientAge: string | null = currentState?.patientAge || null;
+  const ageMatch = message.match(/\b(\d{1,3})\s*(?:years old|yrs old|years|yrs|sal)?\b/i);
+  if (!currentState?.patientAge && ageMatch && ageMatch[1]) {
+    const val = parseInt(ageMatch[1], 10);
+    const isTimeString = /\b\d{1,2}(?::\d{2})?\s*(?:am|pm)\b/i.test(message) || message.includes(':');
+    if (val > 0 && val < 120 && !isTimeString) {
+      extractedPatientAge = String(val);
+      if (intent === 'UNKNOWN' || expected === 'ASK_AGE' || intent === 'SET_NAME') intent = 'SET_AGE';
+    }
+  }
+
   return {
     intent,
-    patientType: q.includes('child') ? 'child' : 'adult',
+    patientName: extractedPatientName,
+    patientAge: extractedPatientAge,
+    patientType: (extractedPatientAge && parseInt(extractedPatientAge, 10) < 18) ? 'child' : (q.includes('child') ? 'child' : 'adult'),
     symptoms,
     specialty,
-    doctorName: null,
+    doctorName: extractedDoctorName,
     date: null,
     timePreference,
     location: null,
@@ -361,7 +483,7 @@ export async function parseStructuredIntentWithGroq(
     const promptContext = {
       patientQuery: query,
       currentApplicationState: {
-        patientName: currentState?.patientName || 'Riya',
+        patientName: currentState?.patientName || '',
         patientType: currentState?.patientType || null,
         symptoms: currentState?.symptoms || (currentState?.symptom ? [currentState.symptom] : []),
         specialty: currentState?.specialty || null,
@@ -464,8 +586,8 @@ export function generateGroqAarviResponse({
   }
 
   const doc = retrievedDoctor || currentState?.doctor || currentState?.availableDoctor;
-  const docName = doc?.name || 'Dr. Amit Sharma';
-  const docSpecialty = doc?.specialty || intentSpecialty || 'Orthopedic';
+  const docName = doc?.name || 'our specialist';
+  const docSpecialty = doc?.specialty || intentSpecialty || 'General Physician';
   const docHospital = doc?.hospital || 'Hospital';
   const docLocation = doc?.location || '';
   const slots = doc?.available_slots?.today || currentState?.availableSlots || ['3:30 PM', '5:00 PM', '6:30 PM'];

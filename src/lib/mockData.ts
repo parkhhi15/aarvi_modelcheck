@@ -95,8 +95,8 @@ export const DEMO_DOCTORS: Doctor[] = [
     location: 'Women Health Center • Wing C',
     rating: 4.9,
     available_slots: {
-      today: ['3:00 PM', '6:00 PM'],
-      tomorrow: ['11:30 AM', '3:30 PM'],
+      today: [],
+      tomorrow: ['10:00 AM', '2:00 PM', '4:30 PM'],
     },
     consultation_fee: '₹900',
   },
@@ -188,8 +188,8 @@ export const DEMO_HOSPITAL_KNOWLEDGE: HospitalKnowledgeItem[] = [
 ];
 
 export const INITIAL_PATIENT_MEMORY: PatientMemory = {
-  id: 'pat-riya-01',
-  patient_name: 'Riya',
+  id: 'pat-01',
+  patient_name: '',
   preferred_language: 'en',
   previous_visit: {
     doctor: 'Dr. Amit Sharma',
@@ -204,7 +204,7 @@ export const INITIAL_PATIENT_MEMORY: PatientMemory = {
   },
   active_appointment: undefined,
   history_logs: [
-    'Patient Riya recorded knee discomfort on 02 August 2026.',
+    'Patient recorded knee discomfort on 02 August 2026.',
   ],
 };
 

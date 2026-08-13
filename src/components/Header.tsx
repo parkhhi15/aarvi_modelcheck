@@ -8,12 +8,14 @@ interface HeaderProps {
   language: Language;
   onLanguageChange: (lang: Language) => void;
   onLogoClick: () => void;
+  onOpenUploadPrescription?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   language,
   onLanguageChange,
   onLogoClick,
+  onOpenUploadPrescription,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-[#F7FCFB]/90 backdrop-blur-md border-b border-[#E2F3F0] px-4 py-3">
@@ -36,9 +38,19 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </button>
 
-        {/* RIGHT: Tech Badge & Language Selector */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E2F3F0]/60 text-[#079CA5] font-extrabold text-[11px] border border-[#BDE7E2]">
+        {/* RIGHT: Prescription Upload, Tech Badge & Language Selector */}
+        <div className="flex items-center gap-2 sm:gap-4">
+          {onOpenUploadPrescription && (
+            <button
+              onClick={onOpenUploadPrescription}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#079CA5] hover:bg-[#06858d] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+            >
+              <span>📄</span>
+              <span className="hidden xs:inline">{language === 'hi' ? 'प्रिस्क्रिप्शन' : 'Upload Prescription'}</span>
+            </button>
+          )}
+
+          <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E2F3F0]/60 text-[#079CA5] font-extrabold text-[11px] border border-[#BDE7E2]">
             <span>✦ Rime Voice • Qdrant RAG</span>
           </div>
 
