@@ -31,6 +31,7 @@ interface HomeScreenProps {
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
   language,
+  patientMemory,
   activeAppointment,
   onOpenVoiceAssistant,
   onOpenModal,
@@ -46,11 +47,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <Building2 className="w-3.5 h-3.5" />
             <span>{DEMO_HOSPITAL_NAME}</span>
           </span>
-            <span>
-              {patientMemory.patient_name
-                ? (language === 'hi' ? `नमस्ते, ${patientMemory.patient_name}` : `Hello, ${patientMemory.patient_name}`)
-                : (language === 'hi' ? 'नमस्ते, स्वागत है' : 'Welcome to CityCare')}
-            </span>
+          <span>
+            {patientMemory.patient_name
+              ? (language === 'hi' ? `नमस्ते, ${patientMemory.patient_name}` : `Hello, ${patientMemory.patient_name}`)
+              : (language === 'hi' ? 'नमस्ते, स्वागत है' : 'Welcome to CityCare')}
+          </span>
           <p className="text-xs font-medium text-[#527977] mt-0.5">
             {language === 'hi'
               ? 'आज मैं आपकी कैसे मदद कर सकती हूँ?'

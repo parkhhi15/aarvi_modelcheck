@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { parseStructuredIntentWithGroq, generateGroqAarviResponse, normalizeTime } from '@/lib/groq';
 
 import {
@@ -9,7 +10,7 @@ import {
   ensureQdrantCollections,
   ALL_10_DOCTORS,
 } from '@/lib/qdrant';
-import { Language, ExplicitConversationState } from '@/lib/types';
+import { Language, ExplicitConversationState, Doctor } from '@/lib/types';
 import { DEMO_DOCTORS } from '@/lib/mockData';
 
 export async function POST(req: NextRequest) {
@@ -219,7 +220,7 @@ export async function POST(req: NextRequest) {
     } else if (intent === 'CHECK_ALTERNATIVE_SLOTS') {
       nextState.expectedNextAction = 'SELECT_SLOT';
       const curSel = currentState?.selectedSlot;
-      const remainingSlots = curSel ? activeSlots.filter((s) => s !== curSel) : activeSlots;
+      const remainingSlots = curSel ? activeSlots.filter((s: string) => s !== curSel) : activeSlots;
       if (curSel && remainingSlots.length > 0) {
         responseText = `Yes${nameSuffix}. Other available times ${activeDayText.toLowerCase()} are ${remainingSlots.join(', ')}. Which time slot would you prefer?`;
       } else {
