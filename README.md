@@ -232,12 +232,12 @@ The prototype demonstrates how AARVI can operate as an AI receptionist inside a 
 
 ### 🎥 Product Demo Video
 
-> **Demo Video:** `ADD_YOUR_DEMO_VIDEO_LINK_HERE`
+> **Demo Video:** `https://drive.google.com/file/d/1oiXGTu4MmiaDVRnB8lmaU_bX58omdqvn/view?usp=drivesdk`
 
 Once the final demo video is uploaded, it can also be embedded using a thumbnail:
 
 ```markdown
-[![Watch AARVI Product Demo](./assets/demo-thumbnail.png)](YOUR_DEMO_VIDEO_LINK)
+[![Watch AARVI Product Demo](./assets/demo-thumbnail.png)]([https://aarvi-modelcheck.onrender.com/](https://aarvi-modelcheck.onrender.com/))
 ```
 
 ### Demo Flow
