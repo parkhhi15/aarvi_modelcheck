@@ -10,7 +10,7 @@ AARVI helps patients find the right doctor, check availability, and manage appoi
 [https://aarvi-modelcheck.onrender.com/](https://aarvi-modelcheck.onrender.com/)
 
 🎥 **Product Demo Video:**  
-[Watch AARVI in Action](https://drive.google.com/file/d/15IXJ9h_9K9X5s96rYZOH-gJEOPsbp3q7/view?usp=sharing)
+[Watch AARVI in Action](https://drive.google.com/file/d/1oiXGTu4MmiaDVRnB8lmaU_bX58omdqvn/view?usp=drivesdk)
 
 ---
 
@@ -20,7 +20,7 @@ AARVI demonstrates a complete voice-first patient journey:
 
 **Talk to AARVI → Describe your concern → Find the right specialist → Check doctor availability → Choose a slot → Confirm appointment**
 
-[▶️ **Watch the Full Product Demo**](https://drive.google.com/file/d/15IXJ9h_9K9X5s96rYZOH-gJEOPsbp3q7/view?usp=sharing)
+[▶️ **Watch the Full Product Demo**](https://drive.google.com/file/d/1oiXGTu4MmiaDVRnB8lmaU_bX58omdqvn/view?usp=drivesdk)
 
 ---
 
