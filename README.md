@@ -9,8 +9,13 @@ AARVI helps patients find the right doctor, check availability, and manage appoi
 🌐 **Live Demo:**  
 [https://aarvi-modelcheck.onrender.com/](https://aarvi-modelcheck.onrender.com/)
 
-🎥 **Product Demo Video:**  
-[Watch AARVI in Action](https://drive.google.com/file/d/1oiXGTu4MmiaDVRnB8lmaU_bX58omdqvn/view?usp=drivesdk)
+## Product Demo
+
+🚀 **Live Working Prototype**
+
+👉 [Open AARVI Live Demo](https://aarvi-modelcheck.onrender.com/)
+
+The prototype demonstrates how AARVI can operate as an AI voice receptionist inside a healthcare website.
 
 ---
 
