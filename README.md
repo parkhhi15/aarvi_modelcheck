@@ -25,7 +25,7 @@ AARVI demonstrates a complete voice-first patient journey:
 
 **Talk to AARVI → Describe your concern → Find the right specialist → Check doctor availability → Choose a slot → Confirm appointment**
 
-[▶️ **Watch the Full Product Demo**](https://drive.google.com/file/d/1oiXGTu4MmiaDVRnB8lmaU_bX58omdqvn/view?usp=drivesdk)
+[▶️ **Watch the Full Product Demo**](https://drive.google.com/file/d/1Sf_TcIEpDaXeV31ZdVGcIw6ohXIebVNi/view?usp=drivesdk)
 
 ---
 
@@ -237,13 +237,11 @@ The prototype demonstrates how AARVI can operate as an AI receptionist inside a 
 
 ### 🎥 Product Demo Video
 
-> Demo Video: [Watch AARVI Product Demo](https://drive.google.com/file/d/1oiXGTu4MniaDVRnB8lmaU_bX58omdqvn/view?usp=drivesdk)
+> Demo Video: [Watch AARVI Product Demo](https://drive.google.com/file/d/1Sf_TcIEpDaXeV31ZdVGcIw6ohXIebVNi/view?usp=drivesdk)
 
 Once the final demo video is uploaded, it can also be embedded using a thumbnail:
 
-```markdown
-[![Watch AARVI Product Demo](./assets/demo-thumbnail.png)](https://drive.google.com/file/d/1oiXGTu4MniaDVRnB8lmaU_bX58omdqvn/view?usp=drivesdk)
-```
+
 
 ### Demo Flow
 
